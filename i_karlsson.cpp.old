@@ -1,0 +1,246 @@
+#include <cstdio>
+#include <algorithm>
+
+using namespace std;
+
+int a;
+int b;
+int c;
+
+//int size = max(a, max(b, c));
+//int size = 5000;
+int const size = 5000;
+bool victory[size + 10];
+int previous[size + 10];
+
+struct Result {
+	bool isItVictory;
+	int a;
+	int b;
+	int c;
+};
+
+Result victoryRec(int a, int b, int c) {
+	if (a == 1 && b == 1 && c == 1) {
+		Result res;
+		res.isItVictory = false;
+		return res;
+	}
+
+	for (int i = 1; i <= a / 2; i++) {
+		if (!victoryRec(a - i, b, c).isItVictory) {
+			Result res;
+			res.isItVictory = true;
+			res.a = a - i;
+			res.b = b;
+			res.c = c;
+
+			return res;
+		}
+	}
+	for (int i = 1; i <= b / 2; i++) {
+		if (!victoryRec(a, b - i, c).isItVictory) {
+			Result res;
+			res.isItVictory = true;
+			res.a = a;
+			res.b = b - i;
+			res.c = c;
+			return res;
+		}
+	}
+	for (int i = 1; i <= c / 2; i++) {
+		if (!victoryRec(a, b, c - i).isItVictory) {
+			Result res;
+			res.isItVictory = true;
+			res.a = a;
+			res.b = b;
+			res.c = c - i;
+			return res;
+		}
+	}
+
+	Result res;
+	res.isItVictory = false;
+	return res;
+}
+
+void victoryArrPrecalc() {
+	for (int i = 2; i <= size; i++) {
+		bool tmp = false;
+		for (int j = 1; j <= i / 2; j++) {
+			if (!victory[i - j]) {
+				tmp = true;
+				previous[i] = i - j;
+				break;
+			}
+		}
+		victory[i] = tmp;
+	}
+}
+
+Result victoryOneDim(int a, int b, int c) {
+	if (victory[a]) {
+		if (victory[b]) {
+			if (victory[c]) {
+				Result res;
+				res.isItVictory = true;
+				res.a = a;
+				res.b = b;
+				res.c = c;
+				return res;
+			} else {
+				Result res;
+				res.isItVictory = false;
+				return res;
+			}
+		} else {
+			if (victory[c]) {
+				Result res;
+				res.isItVictory = false;
+				return res;
+			} else {
+				Result res;
+				res.isItVictory = true;
+				res.a = a;
+				res.b = b;
+				res.c = c;
+				return res;
+
+			}
+		}
+	} else {
+		if (victory[b]) {
+			if (victory[c]) {
+				Result res;
+				res.isItVictory = false;
+				return res;
+			} else {
+				Result res;
+				res.isItVictory = true;
+				res.a = a;
+				res.b = b;
+				res.c = c;
+				return res;
+
+			}
+
+		} else {
+			if (victory[c]) {
+				Result res;
+				res.isItVictory = true;
+				res.a = a;
+				res.b = b;
+				res.c = c;
+				return res;
+
+			} else {
+				Result res;
+				res.isItVictory = false;
+				return res;
+
+			}
+		}
+	}
+}
+
+int main() {
+	victoryRec(1, 1, 38);
+
+	/*
+	victoryArrPrecalc();
+
+	int const checkSize = 51;
+	for (int i = 1; i < checkSize; i++) {	
+		for (int j = 1; j < checkSize; j++) {
+			for (int k = 1; k < checkSize; k++) {
+				printf("%d %d %d\n", i, j, k);
+
+				Result res1 = victoryOneDim(i, j, k);
+				Result res2 = victoryRec(i, j, k);
+				if (res1.isItVictory != res2.isItVictory) {
+					printf("-----------------------\n%d %d %d\n-------------------------------\n", i, j, k);
+				}
+			}
+		}
+	}
+	*/
+}
+
+/*
+int main() {
+	FILE* in = fopen("karlsson.in", "r");
+	fscanf(in, "%d %d %d", &a, &b, &c);
+	fclose(in);
+
+	FILE* out = fopen("karlsson.out", "w");
+	
+	Result res = victoryRec(a, b, c);
+	if (res.isItVictory) {
+		fprintf(out, "YES\n%d %d %d", res.a, res.b, res.c);
+	} else {
+		fprintf(out, "NO");
+	}
+
+	fclose(out);
+
+	return 0;
+}
+*/
+/*
+int main() {
+	FILE* in = fopen("karlsson.in", "r");
+	fscanf(in, "%d %d %d", &a, &b, &c);
+	fclose(in);
+
+	victory[1] = false;
+
+	for (int i = 2; i <= size; i++) {
+		bool tmp = false;
+		for (int j = 1; j <= i / 2; j++) {
+			if (!victory[i - j]) {
+				tmp = true;
+				previous[i] = i - j;
+				break;
+			}
+		}
+		victory[i] = tmp;
+	}
+
+	FILE* out = fopen("karlsson.out", "w");
+
+	if (victory[a]) {
+		if (victory[b]) {
+			if (victory[c]) {
+				fprintf(out, "YES\n%d %d %d", a, b, previous[c]);
+			} else {
+				fprintf(out, "NO");
+			}
+		} else {
+			if (victory[c]) {
+				fprintf(out, "NO");
+			} else {
+				fprintf(out, "YES\n%d %d %d", previous[a], b, c);
+			}
+		}
+	} else {
+		if (victory[b]) {
+			if (victory[c]) {
+				fprintf(out, "NO");
+			} else {
+				fprintf(out, "YES\n%d %d %d", a, previous[b], c);
+			}
+
+		} else {
+			if (victory[c]) {
+				fprintf(out, "YES\n%d %d %d", a, b, previous[c]);
+			} else {
+				fprintf(out, "NO");
+			}
+		}
+	}
+
+	fclose(out);
+
+	return 0;
+}
+*/

@@ -1,0 +1,178 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <set>
+
+#include <cstdio>
+#include <utility>
+#include <string.h>
+
+using namespace std;
+
+int const p = 127;
+
+unsigned const maxDictWordLength = 80;
+//set<unsigned long long> dictHashByLength[maxDictWordLength + 1];
+vector<unsigned long long> dictHashByLength[maxDictWordLength + 1];
+
+unsigned const maxCompareStringSize= 250;
+unsigned long long pPower[maxCompareStringSize + 1];
+
+vector< pair<char*, int> > stringsToCompare;
+//vector<string> stringsToCompare;
+vector< vector<unsigned long long>* > prefixHash;
+vector<bool> resultStringNumber;
+
+void powerCalc() {
+	pPower[0] = 1;
+	for (unsigned i = 1; i <= maxCompareStringSize; i++) {
+		pPower[i] = pPower[i - 1] * p;
+	}
+}
+
+/*
+unsigned long long hash(string const &str) {
+	unsigned long long result = 0;
+	
+	for (unsigned i = 0; i < str.length(); i++) {
+		result += pPower[i] * ((unsigned) str[i]);
+	}
+
+	return result;
+}
+*/
+
+unsigned long long hash(char* str, int length) {
+	unsigned long long result = 0;
+	
+	for (unsigned i = 0; i < length; i++) {
+		result += pPower[i] * ((unsigned) str[i]);
+	}
+
+	return result;
+}
+
+int main() {
+	powerCalc();
+
+	//cerr << "111";
+
+	//ifstream in("console.in");
+	FILE* in = fopen("console.in", "r");
+	int n;
+	//in >> n;
+	fscanf(in, "%d\n", &n);
+
+	//string tmp;
+	char* tmp = new char[maxDictWordLength + 10];
+	//getline(in, tmp); // getting blank line
+
+	//cerr << "222";
+
+	for (int i = 0; i < n; i++) {
+		//getline(in, tmp);
+		fgets(tmp, maxDictWordLength + 8, in);
+
+		//int length = tmp.length();
+		int length = strlen(tmp) - 1; // -1 - for new line symbol
+		unsigned long long curHash = hash(tmp, length);
+
+		//dictHashByLength[length].insert(curHash);
+		dictHashByLength[length].push_back(curHash);
+	}
+	
+	//cerr << "444";
+
+	//while (!in.eof()) {
+	while (! feof(in)) {
+		//cerr << "555\n";
+		//cerr << tmp;
+
+		tmp = new char[maxCompareStringSize + 10];
+		if (fgets(tmp, maxCompareStringSize + 8, in) == 0) {
+			break;
+		}
+		//getline(in, tmp);
+		//stringsToCompare.push_back(tmp);
+		
+		int length = strlen(tmp) - 1;
+		stringsToCompare.push_back(pair<char *, int>(tmp, length));
+
+		vector<unsigned long long>* curPrefixHash = new vector<unsigned long long>();
+		unsigned long long curHash = (unsigned) tmp[0];
+		curPrefixHash->push_back(curHash);
+		//for (unsigned i = 1; i < tmp.length(); i++) {
+		for (unsigned i = 1; i < length; i++) {
+			curHash += pPower[i] * ((unsigned) tmp[i]);
+			curPrefixHash->push_back(curHash);
+		}
+
+		prefixHash.push_back(curPrefixHash);
+		resultStringNumber.push_back(false);
+	}
+	//in.close();
+	fclose(in);
+
+	//cerr << "666";
+
+	for (unsigned i = 1; i <= maxDictWordLength; i++) {
+		// compare strings with i length
+		
+		if (dictHashByLength[i].size() == 0) {
+			continue;
+		}
+
+		for (unsigned j = 0; j < stringsToCompare.size(); j++) {
+			// now we have concrete string to compare
+			
+			//if (resultStringNumber[j] || stringsToCompare[j].length() < i) {
+			if (resultStringNumber[j] || stringsToCompare[j].second < i) {
+				continue;
+			}
+
+			bool isGoodStr = false;
+
+			unsigned long long iHash = (*prefixHash[j])[i - 1];
+			//for (unsigned k = i - 1; k < stringsToCompare[j].length(); k++) {
+			for (unsigned k = i - 1; k < stringsToCompare[j].second; k++) {
+				// hash
+				iHash = k >= i
+					? (*prefixHash[j])[k] - (*prefixHash[j])[k - i]
+					: (*prefixHash[j])[k];
+
+				for (unsigned h = 0; h < dictHashByLength[i].size(); h++) {
+					unsigned long long curHash = k >= i
+						? dictHashByLength[i][h] * pPower[k - i + 1]
+						: dictHashByLength[i][h];
+
+					if (curHash == iHash) {
+						isGoodStr = true;
+						break;
+					}
+				}
+
+				if (isGoodStr) {
+					break;
+				}
+			}
+
+			resultStringNumber[j] = isGoodStr;
+		}
+	}
+
+
+	//cerr << "999";
+
+	FILE* out = fopen("console.out", "w");
+	for (unsigned i = 0; i < resultStringNumber.size(); i++) {
+		if (resultStringNumber[i]) {
+			//fprintf(out, "%s\n", stringsToCompare[i].c_str());
+			fprintf(out, "%s", stringsToCompare[i].first);
+		}
+	}
+
+	fclose(out);
+
+	return 0;
+}
